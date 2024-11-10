@@ -3,7 +3,9 @@
  
 # include "std.ri";
 
-# struct myst (
+#const MY_CONST 47;
+
+#struct myst (
 	one,
 	next,
 	three,
@@ -18,10 +20,10 @@
 	a = array(123);
 	s = struct(myst);
 
-	s.one = 1.0001; 
-	s.next = "two";
-	s.three = 3;
-	s.four = '4';
+	s.myst.one = 1.0001; 
+	s.myst.text = "two";
+	s.myst.three = 3;
+	s.myst.four = '4';
 	a[0] = "yo";
 	a[122] = "last";
 
@@ -41,11 +43,11 @@
 		}
 	},
 	0:-1:{
-		print(int2str(s.three) "\n");
+		print(int2str(s.myst.three) "\n" ptr2str(s.myst.text));
 	});
 	free(a);
 	test();
-	free(s);
+	free(s.myst);
 	return 0;
 }
 

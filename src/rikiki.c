@@ -50,6 +50,8 @@ struct rik {
 	char *file;
 	struct pair *structs;
 	struct pair *funcs;
+	struct pair *consts;
+	char tmp[128];
 };
 
 struct rik *load(char *file);
@@ -195,7 +197,7 @@ struct pair *named_parameters(struct rik *st)
 		b = st->buf + st->pos;
 		l = id_len(b);
 		if (l < 1) {
-			error("syntax error in struct ", st);
+			error("expecting identifier ", st);
 		}
 		if (i + l >= allo) {
 			allo += 256;
@@ -227,12 +229,83 @@ struct pair *named_parameters(struct rik *st)
 	return p;
 }
 
+char *constant(struct rik *st)
+{
+	int i;
+	char *b;
+	b = st->buf + st->pos;
+	i = 0;
+	if (b[i] == '+' || b[i] == '-') {
+		st->tmp[i] = b[i];
+		i++;
+	}
+	while (b[i] >= '0' && b[i] <= '9') {
+		st->tmp[i] = b[i];
+		if (i > 100) {
+			error("constant too large", st);
+		}
+		i++;
+	}
+	if (i < 1) {
+		return NULL;
+	}
+	st->tmp[i] = '\0';
+	return st->tmp;	
+}
+
+int const_process(struct rik *st)
+{
+	struct pair *p;
+	struct pair *op;
+	char *c;
+
+	p = pair_create(st);
+	whitespaces(st,0);
+	c = constant(st);
+	whitespaces(st,1);
+	if (!c) {
+		error("expecting constant", st);
+	}
+	p->value = strdup(c);
+	printf("#define %s %s\n", p->name, p->value);
+	st->pos++;
+	op = st->consts;
+	if (!op) {
+		st->consts = p;
+	} else {
+		while (op->next) {
+			op = op->next;
+		}
+		op->next = p;
+	}
+	return 0;
+}
+
+
 int struct_process(struct rik *st)
 {
 	struct pair *p;
 	struct pair *op;
-
+	char *b;
+	char *e;
+	int o;
 	p = named_parameters(st);
+	printf("struct %s {\n", p->name);
+	b = p->value;
+	e = b;
+	while (*e) {
+		e++;
+		if (*e == ',' || *e == '\0') {
+			o = *e;
+			*e = '\0';
+			printf("\tvar %s;\n", b);
+			*e = o;
+			if (o) {
+				b = e + 1;
+			}
+		}
+	}
+	printf("};\n", p->name);
 	op = st->structs;
 	if (!op) {
 		st->structs = p;
@@ -249,8 +322,33 @@ int declare_func(struct rik *st)
 {
 	struct pair *p;
 	struct pair *op;
+	char *b;
+	char *e;
+	int o;
 
 	p = named_parameters(st);
+	printf("var %s(", p->name);
+	b = p->value;
+	e = b;
+	while (*e) {
+		e++;
+		if (*e == ',' || *e == '\0') {
+			o = *e;
+			*e = '\0';
+			printf("var %s", b);
+			*e = o;
+			if (o) {
+				b = e + 1;
+				printf(", ");
+			}
+		}
+	}
+	if (e == b) {
+		printf("void)");
+	} else {
+		printf(")");
+	}
+
 	op = st->funcs;
 	if (!op) {
 		st->funcs = p;
@@ -270,6 +368,7 @@ int func_process(struct rik *st)
 		if (st->buf[st->pos] != ';') {
 				error("expecting ';' or '{'", st);
 		} else {
+			printf(";\n");
 			return 0;
 		}
 	}
@@ -279,6 +378,7 @@ int func_process(struct rik *st)
 	}
 	st->depth = 0;	
 	st->pos++;
+	printf("\n{\n");
 	while (st->depth >= 0 && !whitespaces(st,1)) {
 		switch (st->buf[st->pos]) {
 		case '$':
@@ -292,6 +392,7 @@ int func_process(struct rik *st)
 		}
 		st->pos++;
 	}
+	printf("}\n");
 	return 0;
 }
 
@@ -351,7 +452,6 @@ int k2c(struct rik *st)
 	char *b;
 	whitespaces(st,1);
 	while (st->pos < st->end) {
-		putc(st->buf[st->pos], stdout);
 		switch (st->state) {
 		case 0:
 			switch (st->buf[st->pos]) {
@@ -374,6 +474,12 @@ int k2c(struct rik *st)
 						st->pos += 6;
 					}
 					break;
+				case 'c':
+					if (!strncmp(b, "const", 5)) {
+						st->state = 4;
+						st->pos += 5;
+					}
+					break;
 				}
 				break;
 			case '@':
@@ -391,6 +497,11 @@ int k2c(struct rik *st)
 			break;
 		case 3: /* struct */
 			struct_process(st);
+			st->pos++;
+			st->state = 0;
+			break;
+		case 4: /* const */
+			const_process(st);
 			st->pos++;
 			st->state = 0;
 			break;
@@ -419,6 +530,7 @@ struct rik *load(char *file)
 	st->file = strdup(file);
 	st->structs = 0;
 	st->funcs = 0;
+	st->consts = 0;
 	st->parent = 0;
 	if (!st->buf) {
 		free(st);
@@ -442,6 +554,14 @@ int main(int argc, char *argv[])
 	case 1:
 		st = load(argv[1]);
 		if (st) {
+			printf("#include <stdio.h>\n");
+			printf("#include <stdlib.h>\n");
+			printf("#include <string.h>\n");
+			printf("#define var long\n");
+			printf("#define ptr2str(d,v) strcat(d,(char*)(v))\n");
+			printf("#define int2str(d,v) snprinf(d,\"%%d\",v)\n");
+			printf("#define flt2str(d,v) snprinf(d,\"%%f\",v)\n");
+			printf("\n");
 			k2c(st);
 			rik__delete(st);
 		}
