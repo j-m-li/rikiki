@@ -1,0 +1,2 @@
+# rikiki
+rikiki programming language
