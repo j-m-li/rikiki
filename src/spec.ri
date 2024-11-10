@@ -1,0 +1,56 @@
+
+; This software is dedicated to the public domain.
+ 
+# include "std.ri";
+
+# struct myst (
+	one,
+	next,
+	three,
+	four
+);
+
+@test();
+
+@ main(argc, argv) 
+{
+	$i,a,s,end;
+	a = array(123);
+	s = struct(myst);
+
+	s.one = 1.0001; 
+	s.next = "two";
+	s.three = 3;
+	s.four = '4';
+	a[0] = "yo";
+	a[122] = "last";
+
+	print("hello" " world\n" ptr2str(argv[argc-1]));
+	switch (argc > 2) (
+	+1:{	
+		print("\n > " int2str(argc) "\n");
+		i = 2;
+		end = 0;
+		while (i < argc && end == 0) {
+			print(".");
+			i = i + 1;
+			switch (i) (
+			+10: {
+				end = 1;
+			});
+		}
+	},
+	0:-1:{
+		print(int2str(s.three) "\n");
+	});
+	free(a);
+	test();
+	free(s);
+	return 0;
+}
+
+@ test()
+{
+	print("test");
+}
+
