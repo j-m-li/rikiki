@@ -20,17 +20,19 @@
 	a = array(123);
 	s = struct(myst);
 
-	s.myst.one = 1.0001; 
+	s.myst.one = 10001; 
 	s.myst.text = "two";
 	s.myst.three = 3;
 	s.myst.four = '4';
 	a[0] = "yo";
 	a[122] = "last";
 
-	print("hello" " world\n" ptr2str(argv[argc-1]));
+	print("hello world\n");
+	print(argv[argc-1]);
+	printi(argv[argc-1]);
 	switch (argc > 2) (
 	+1:{	
-		print("\n > " int2str(argc) "\n");
+		print("yo \n");
 		i = 2;
 		end = 0;
 		while (i < argc && end == 0) {
@@ -43,7 +45,7 @@
 		}
 	},
 	0:-1:{
-		print(int2str(s.myst.three) "\n" ptr2str(s.myst.text));
+		print(s.myst.text);
 	});
 	free(a);
 	test();
