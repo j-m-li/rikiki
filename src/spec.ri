@@ -5,7 +5,7 @@
 
 #const MY_CONST 47;
 
-#struct myst (
+# struct myst (
 	one,
 	next,
 	three,
@@ -13,6 +13,7 @@
 );
 
 @test();
+@t2(a,b);
 
 @ main(argc, argv) 
 {
@@ -21,7 +22,7 @@
 	s = struct(myst);
 
 	s.myst.one = 10001; 
-	s.myst.text = "two";
+	s.myst.next = "two";
 	s.myst.three = 3;
 	s.myst.four = '4';
 	a[0] = "yo";
@@ -29,7 +30,7 @@
 
 	print("hello world\n");
 	print(argv[argc-1]);
-	printi(argv[argc-1]);
+	print2(argv[argc-1]);
 	switch (argc > 2) (
 	+1:{	
 		print("yo \n");
@@ -45,7 +46,7 @@
 		}
 	},
 	0:-1:{
-		print(s.myst.text);
+		print(s.myst.next);
 	});
 	free(a);
 	test();
@@ -55,6 +56,11 @@
 
 @ test()
 {
-	print("test");
+	print("test\n");
+	print2(MY_CONST);
+	t2(1,2);
 }
 
+@t2(a,b) {
+	print2(a+b);
+}
