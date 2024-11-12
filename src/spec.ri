@@ -15,9 +15,10 @@
 @test();
 @t2(a,b);
 
-@ main(argc, argv) 
+@ startup(argc, argv) 
 {
 	$i,a,s,b,end,f;
+	$n;
 	a = array(123);
 	s = struct(myst);
 	b = bytes(3);
@@ -26,6 +27,14 @@
 	poke(b,1,'\n');
 	poke(b,2,0);
 	print(b);
+
+	f = t2;	
+	f.(100,2,3,4,5);
+	f = f.();
+
+	n = 1 * 20 % 2 / 3 + (17 - 4); 
+	print2(n);
+
 	s.myst.one = 10001; 
 	s.myst.next = "two";
 	s.myst.three = 3;
@@ -43,7 +52,7 @@
 		print("yo \n");
 		i = 2;
 		end = 0;
-		while (i < argc && end == 0) {
+		while (i < argc && (end == 0 || 3 == 2)) {
 			print(".");
 			i = i + 1;
 			switch (i) (
@@ -60,7 +69,10 @@
 	free(s.myst);
 	f = file_size(argv[1]);
 	switch(f > 0) (
-	+1: {
+	+1:
+	2:
+	3:
+	-5: {
 		f = file_load(argv[1], f);
 		print(f);
 	});
@@ -74,6 +86,7 @@
 	t2(1,2);
 }
 
-@t2(a,b) {
+@t2( a , b ) {
 	print2(a+b);
+	print("\n");
 }

@@ -1,4 +1,6 @@
 /*
+         rikiki programing language to C translator
+
 
           MMXXIV November 11 PUBLIC DOMAIN by JML
 
@@ -527,6 +529,12 @@ int op_dot(struct rik *st, char *name, int len)
 	st->pos++;
 	whitespaces(st,0);
 	b = st->buf + st->pos;
+	if (*b == '(') {
+		printf("((var (*)())");
+		printsub(name, len);
+		printf(")");
+		return op_call(st, name, 0);
+	}
 	l = id_len(b);
 	if (l < 1) {
 		error("expecting struct identifier after '.'", st);
@@ -1294,3 +1302,4 @@ int main(int argc, char *argv[])
 	}
 	return 0;
 }
+

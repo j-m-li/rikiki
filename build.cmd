@@ -10,7 +10,9 @@ DIR=$(dirname "$0")
 (echo build .. $2)
 (cd ${DIR}/bin;cc ../src/rikiki.c -o rkc; ./rkc ../src/spec.ri > t.c)
 (cd ${DIR}/bin;./rkc ../src/spec.ri > t.c)
-(cd ${DIR}/bin; cc -o a t.c; ./a)
+(cd ${DIR}/bin; cc -Wall -o a t.c; ./a)
+(cd ${DIR}/bin;./rkc ../src/hello.ri > h.c)
+(cd ${DIR}/bin; cc -Wall -o hello h.c; ./hello)
 exit $?
 :CMDENTRY
 

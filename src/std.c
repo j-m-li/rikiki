@@ -1,7 +1,6 @@
 /*
 
-     The authors and contributors disclaim copyright, patents
-           and all related rights to this software.
+   This software is dedicated to the public domain.
 
 */
 
@@ -15,16 +14,22 @@
 #define peek(buf, at) ((unsigned char*)buf)[at]
 #define poke(buf, at, v) ((unsigned char*)buf)[at] = (v)
 
+var startup(var a, var b);
+
+int main(int argc, char *argv[])
+{
+	return startup(argc, (var)(void*)argv);
+}
 
 var print(var str)
 {
-	printf("%s", str);
+	printf("%s", (char*)str);
 	return 0;
 }
 
 var print2(var n)
 {
-	printf("%d", n);
+	printf("%ld", n);
 	return 0;
 }
 
