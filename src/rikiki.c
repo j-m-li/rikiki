@@ -576,6 +576,26 @@ int op_index(struct rik *st, char *name, int len)
 	return 0;
 }
 
+int keyw_bytes(struct rik *st)
+{
+	whitespaces(st,0);
+	if (st->buf[st->pos] != '(') {
+		error("missing '('", st);
+	}
+	st->pos++;
+	whitespaces(st,1);
+	printf("malloc(((");
+	expression(st);
+	whitespaces(st,1);
+	printf(") & ~(sizeof(var) - 1)) + sizeof(var))");
+	if (st->buf[st->pos] != ')') {
+		error("missing ')'", st);
+	}
+	st->pos++;
+	return 0;
+}
+
+
 int keyw_array(struct rik *st)
 {
 	whitespaces(st,0);
@@ -606,83 +626,6 @@ int keyw_free(struct rik *st)
 	expression(st);
 	st->pos++;
 	printf(")");
-	return 0;
-}
-
-int keyw_bin2ter(struct rik *st)
-{
-}
-
-int keyw_ter2bin(struct rik *st)
-{
-}
-
-int keyw_and2(struct rik *st)
-{
-}
-int keyw_or2(struct rik *st)
-{
-}
-int keyw_xor2(struct rik *st)
-{
-}
-int keyw_inv2(struct rik *st)
-{
-}
-int keyw_cons3(struct rik *st)
-{
-}
-int keyw_any3(struct rik *st)
-{
-}
-int keyw_xor3(struct rik *st)
-{
-}
-int keyw_neg3(struct rik *st)
-{
-}
-
-int keyw_print3(struct rik *st)
-{
-	return 0;
-}
-
-int keyw_print2(struct rik *st)
-{
-	whitespaces(st,0);
-	if (st->buf[st->pos] != '(') {
-		error("missing '('", st);
-	}
-	st->pos++;
-	whitespaces(st,1);
-	printf("printf(\"%%d\",");
-	expression(st);
-	whitespaces(st,1);
-	if (st->buf[st->pos] != ')') {
-		error("missing ')'", st);
-	}
-	printf(")");
-	st->pos++;
-	return 0;
-}
-
-
-int keyw_print(struct rik *st)
-{
-	whitespaces(st,0);
-	if (st->buf[st->pos] != '(') {
-		error("missing '('", st);
-	}
-	st->pos++;
-	whitespaces(st,1);
-	printf("printf(\"%%s\",");
-	expression(st);
-	whitespaces(st,1);
-	if (st->buf[st->pos] != ')') {
-		error("missing ')'", st);
-	}
-	printf(")");
-	st->pos++;
 	return 0;
 }
 
@@ -861,23 +804,17 @@ int func_call(struct rik *st, char *b, int idl)
 			}
 		}
 		break;
+	case 'b':
+		if (idl == 5) {
+			if (!strncmp(b, "bytes", 5)) {
+				return keyw_bytes(st);
+			}
+		}
+		break;
 	case 'f':
 		if (idl == 4) {
 			if (!strncmp(b, "free", 4)) {
 				return keyw_free(st);
-			}
-		}
-		break;
-	case 'p':
-		if (idl == 5) {
-			if (!strncmp(b, "print", 5)) {
-				return keyw_print(st);
-			}
-		} else if (idl == 6) {
-			if (!strncmp(b, "print2", 6)) {
-				return keyw_print2(st);
-			} else if (!strncmp(b, "print3", 6)) {
-				return keyw_print3(st);
 			}
 		}
 		break;
@@ -1099,7 +1036,9 @@ int expression(struct rik *st)
 			break;
 		case '"':
 			sl = string_len(b);
+			printf("((var)(void*)");
 			printsub(b, sl);
+			printf(")");
 			idl = 0;
 			st->pos += sl;
 			op = '"';
@@ -1176,6 +1115,8 @@ int include_process(struct rik *st)
 	int i;
 	char *fn;
 	struct rik *nst;
+	char *name;
+	int size;
 
 	b = st->buf + st->pos;
 	if (b[0] != '"') {
@@ -1194,6 +1135,7 @@ int include_process(struct rik *st)
 			break;
 		}
 	}
+	name = fn + i;
 	while (i < 2040) {
 		st->pos++;
 		if (*b != '"') {
@@ -1210,6 +1152,20 @@ int include_process(struct rik *st)
 	fn[i] = '\0';
 	nst = load(fn);
 	if (nst) {
+		if (!strcmp(name, "std.ri")) {
+			fn[i-1] = '\0';
+			fn[i-2] = 'c';
+			size = file_size(fn);
+			if (size > 0) {
+				b = file_load(fn, size);
+				if (b) {
+					fwrite(b, 1, size, stdout);
+					free(b);
+				}
+			}
+			fn[i-1] = 'i';
+			fn[i-2] = 'r';
+		}
 		nst->parent = st;
 		k2c(nst);
 		rik__delete(nst);
@@ -1332,12 +1288,6 @@ int main(int argc, char *argv[])
 	case 1:
 		st = load(argv[1]);
 		if (st) {
-			printf("#ifndef var\n");
-			printf("#include <stdio.h>\n");
-			printf("#include <stdlib.h>\n");
-			printf("#include <string.h>\n");
-			printf("#define var long\n");
-			printf("#endif\n");
 			k2c(st);
 			rik__delete(st);
 		}

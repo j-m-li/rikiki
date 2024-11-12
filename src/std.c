@@ -1,0 +1,83 @@
+/*
+
+     The authors and contributors disclaim copyright, patents
+           and all related rights to this software.
+
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifndef var
+#define var long
+#endif
+
+#define peek(buf, at) ((unsigned char*)buf)[at]
+#define poke(buf, at, v) ((unsigned char*)buf)[at] = (v)
+
+
+var print(var str)
+{
+	printf("%s", str);
+	return 0;
+}
+
+var print2(var n)
+{
+	printf("%d", n);
+	return 0;
+}
+
+var file_size(var path)
+{
+	FILE *fp;
+	var si;
+	fp = fopen((char*)path, "rb");
+	if (!fp) {
+		return 0;
+	}
+	fseek(fp, 0, SEEK_END);
+	si = ftell(fp);
+	fclose(fp);
+	return si;
+}
+
+var file_load(var path, var size)
+{
+	char *buf;
+	FILE *fp;
+	var ret;
+
+	fp = fopen((char*)path, "rb");
+	if (!fp) {
+		return 0;
+	}
+	buf = malloc(size+1);
+	if (!buf) {
+		return 0;
+	}
+	ret = fread(buf, 1, size, fp);
+	if (ret != size) {
+		free(buf);
+		buf = 0;
+	}
+	buf[size] = '\0';
+	fclose(fp);
+	return (var)buf;
+}
+
+var file_save(var path, var size, var buf)
+{
+	FILE *fp;
+	var ret;
+
+	fp = fopen((char*)path, "wb");
+	if (!fp) {
+		return -1;
+	}
+	ret = fwrite((void*)buf, 1, size, fp);
+	fclose(fp);
+	return ret;
+}
+
+

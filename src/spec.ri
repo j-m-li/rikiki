@@ -17,18 +17,25 @@
 
 @ main(argc, argv) 
 {
-	$i,a,s,end;
+	$i,a,s,b,end,f;
 	a = array(123);
 	s = struct(myst);
-
+	b = bytes(3);
+	
+	poke(b,0,'B');
+	poke(b,1,'\n');
+	poke(b,2,0);
+	print(b);
 	s.myst.one = 10001; 
 	s.myst.next = "two";
 	s.myst.three = 3;
 	s.myst.four = '4';
 	a[0] = "yo";
-	a[122] = "last";
+	a[122] = "lAst";
 
 	print("hello world\n");
+	print2(peek(a[122], 1));
+	print("\n");
 	print(argv[argc-1]);
 	print2(argv[argc-1]);
 	switch (argc > 2) (
@@ -51,6 +58,12 @@
 	free(a);
 	test();
 	free(s.myst);
+	f = file_size(argv[1]);
+	switch(f > 0) (
+	+1: {
+		f = file_load(argv[1], f);
+		print(f);
+	});
 	return 0;
 }
 
