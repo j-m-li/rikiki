@@ -11,7 +11,7 @@
 #define var long
 #endif
 
-#define peek(buf, at) ((unsigned char*)buf)[at]
+#define peek(buf, at) ((var)(((unsigned char*)buf)[at]))
 #define poke(buf, at, v) ((unsigned char*)buf)[at] = (v)
 
 var startup(var a, var b);

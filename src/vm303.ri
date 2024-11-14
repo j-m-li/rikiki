@@ -1,0 +1,153 @@
+//
+// This software is dedicated to the public domain.
+//
+
+// ternary trit notation:
+// "01" = +1
+// "10" = -1
+// "00" =  0
+
+#include "std.ri";
+
+#struct vm3o3 (
+	a,
+	b,
+	c,
+	pc,
+	pages,
+	flag,
+	bank
+);
+
+#vm3o3__new()
+(
+	$self,p;
+	self = struct(vm3o3);
+	self.vm3o3.a = bytes(4); // 4 byte to represent 2 trit in ascii
+	self.vm3o3.b = bytes(4);
+	self.vm3o3.c = bytes(4);
+	self.vm3o3.pc = bytes(4);
+	self.vm3o3.bank = bytes(4);
+	p = array(6);
+	self.vm3o3.pages = p;
+	p[0] = bytes(32); // 16 trit
+	p[1] = bytes(32);
+	p[2] = bytes(32);
+	p[3] = bytes(32);
+	p[4] = bytes(32);
+	p[5] = bytes(32);
+	self.vm3o3.flag = bytes(2); // 1 trit carry flag
+	return self;
+)
+
+#vm3o3__dispose(self)
+(
+	$p;
+	free(self.vm3o3.a);
+	free(self.vm3o3.b);
+	free(self.vm3o3.c);
+	free(self.vm3o3.pc);
+	free(self.vm3o3.bank);
+	p = self.vm3o3.pages;
+	free(p[0]);
+	free(p[1]);
+	free(p[2]);
+	free(p[3]);
+	free(p[4]);
+	free(p[5]);
+	free(p);
+	free(self.vm3o3.flag);
+	free(self);
+	return 0;
+)
+
+#t2b(n)
+(
+	$r;
+	r = 0;
+	switch(n[0]) (
+	'1': ( r = r + 1;
+	));
+	switch(n[1]) (
+	'1': ( r = r - 1;
+	));
+	switch(n[2]) (
+	'1': ( r = r + 3;
+	));
+	switch(n[3]) (
+	'1': ( r = r - 3;
+	));
+	return r;	
+)
+
+// store 'a' register
+#vm3o3__sta(self, cell)
+(
+	$p,r,i,b;
+	p = self.vm3o3.pages;
+	r = self.vm3o3.a;
+	i = t2b(cell) + 4;
+	b = t2b(self.vm3o3.bank);
+	poke(p[b],i*2,r[0]);
+	poke(p[b],i*2+1,r[1]);
+	return 0;
+)
+
+// load 'a' register
+#vm3o3__lda(self, cell)
+(
+	$p,r,i,b;
+	p = self.vm3o3.pages;
+	r = self.vm3o3.a;
+	i = t2b(cell) + 4;
+	b = t2b(self.vm3o3.bank);
+	r[0] = peek(p[b],i*2);
+	r[1] = peek(p[b],i*2+1);
+	return 0;
+)
+
+
+#vm3o3__reset(self)
+(
+	// set bank (page access) to 0 -> the global (16 trit) program counter
+	poke(self.vm3o3.bank,0,'0');
+	poke(self.vm3o3.bank,1,'0');
+
+	// set the local (2 trit) program counter to 0
+	poke(self.vm3o3.pc,0,'0');
+	poke(self.vm3o3.pc,1,'0');
+
+	// set a register to 0
+	poke(self.vm3o3.a,0,'0');
+	poke(self.vm3o3.a,1,'0');
+
+	// write 0 (using reg a)  to the global program counter	
+	vm3o3__sta(self, "1010"); // -4  0
+	vm3o3__sta(self, "1000"); //     2
+	vm3o3__sta(self, "1001"); //     4
+	vm3o3__sta(self, "0010"); //     6
+	vm3o3__sta(self, "0000"); // 0   8
+	vm3o3__sta(self, "0001"); //    10
+	vm3o3__sta(self, "0110"); //    12
+	vm3o3__sta(self, "0100"); //    14
+	vm3o3__sta(self, "0101"); // +4 validate
+	
+	return 0;
+)
+
+
+#vm3o3__run(self)
+(
+)
+
+#startup(argc, argv) 
+(
+	$vm;
+	print("3o3 Virtual Machine\n");
+	vm = vm3o3__new();
+	vm3o3__reset(vm);
+	vm3o3__run(vm);
+	vm3o3__dispose(vm);
+
+	return 0;
+)

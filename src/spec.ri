@@ -1,32 +1,32 @@
-;
-; This software is dedicated to the public domain.
-;
+//
+// This software is dedicated to the public domain.
+//
  
-# include "std.ri"; include an other source file
+# include "std.ri"; // include an other source file
 
-#const MY_CONST 47; define a constant
+#const MY_CONST 47; //define a constant
 
-# struct myst ( ; a structure with four members
+# struct myst ( // a structure with four members
 	one, 
 	next,
 	three,
 	four
 ); 
 
-@test(); Functions must be declared before calling them
-@t2(a,b); everything after a semicolon is a comment till the end of line
+#test(); //Functions must be declared before calling them
+#t2(a,b); //everything after // is a comment till the end of line
 
-@ startup(argc, argv) 
-{		            ; definition of the entry point function
+# startup(argc, argv) 
+(		            // definition of the entry point function
 
-	$i,a,s,b,end; declaration of local variables
+	$i,a,s,b,end; //declaration of local variables
 	$n;
 	$f;
-	a = array(123);   allocate an array of 123 intergers
-	s = struct(myst); allocate a "myst" structure
-	b = bytes(3);     allocate 3 bytes of memory
+	a = array(123);   //allocate an array of 123 intergers
+	s = struct(myst); //allocate a "myst" structure
+	b = bytes(3);     //allocate 3 bytes of memory
 	
-	poke(b,0,'B');	  put a B in the first byte of b memory
+	poke(b,0,'B');	  // put a B in the first byte of b memory
 	poke(b,1,'\n');
 	poke(b,2,0);
 	print(b);
@@ -35,12 +35,12 @@
 	f.(100,2,3,4,5);
 	f = f.();
 
-	n = 1 * 20 % 2 / 3 + (17 - 4); that's all the operators that we have
+	n = 1 * 20 % 2 / 3 + (17 - 4); //that's all the operators that we have
 	print2(n);
 
-	s.myst.one = 10001;  to access a struct member we 
-                            ;put the name of the struct 
-                            ;then the member name
+	s.myst.one = 10001; // to access a struct member we 
+                            //put the name of the struct 
+                            //then the member name
 	s.myst.next = "two";
 	s.myst.three = 3;
 	s.myst.four = '4';
@@ -48,28 +48,28 @@
 	a[122] = "lAst";
 
 	print("hello world\n");
-	print2(peek(a[122], 1));   print the integer value of the second byte
-;                                  of the string pointer by the 123 cell of a
+	print2(peek(a[122], 1));  // print the integer value of the second byte
+                                  // of the string pointer by the 123 cell of a
 	print("\n");
 	print(argv[argc-1]);
 	print2(argv[argc-1]);
-	switch (argc > 2) (      ; switch is used a replacement of if/else
-	+1:{	
+	switch (argc > 2) (      // switch is used a replacement of if/else
+	+1:(	
 		print("yo \n");
 		i = 2;
 		end = 0;
-		while (i < argc && (end == 0 || 3 == 2)) { ; only while loop
+		while (i < argc && (end == 0 || 3 == 2)) ( // only while loop
 			print(".");
 			i = i + 1;
 			switch (i) (
-			+10: {
+			+10: (
 				end = 1;
-			});
-		}
-	},
-	0:-1:{
+			));
+		);
+	),
+	0:-1:(
 		print(s.myst.next);
-	});
+	));
 	free(a);
 	test();
 	free(s.myst);
@@ -78,21 +78,21 @@
 	+1:
 	2:
 	3:
-	-5: {
+	-5: (
 		f = file_load(argv[1], f);
 		print(f);
-	});
+	));
 	return 0;
-}
+)
 
-@ test()
-{
-	print("test\n"); print a string
-	print2(MY_CONST); print a number (print3 is for ternary encoded numbers)
+# test()
+(
+	print("test\n"); //print a string
+	print2(MY_CONST); // print a number (print3 is for ternary encoded numbers)
 	t2(1,2);
-}
+)
 
-@t2( a , b ) {
+#t2( a , b ) (
 	print2(a+b);
 	print("\n");
-}
+)

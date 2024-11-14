@@ -1,4 +1,4 @@
 #include "std.ri";
-@startup(argc, argv) {
+#startup(argc, argv) (
     print("Hello world!\n");
-}
+)
