@@ -7,8 +7,8 @@ A smaller C than C.
 
 ## Hello World
 ```
-#include "std.ri";
-@startup(argc, argv) (
+include "std.ri";
+startup(argc, argv) (
     print("Hello world!\n");
 )
 ```

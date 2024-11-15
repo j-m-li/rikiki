@@ -1,7 +1,12 @@
 //
 // This software is dedicated to the public domain.
 //
- 
+
+
+// There is no type checking. Every variable is threated equaly as an 
+// integer, a pointer, a one dimension array of integer/pointer, a 
+// pointer to a byte array or a function pointer.
+
 include "std.ri"; // include an other source file
 
 const MY_CONST 47; //define a constant
@@ -21,7 +26,7 @@ startup(argc, argv)
 
 	%i,a,s,b,end; //declaration of local variables
 	%n;
-	%f;
+	%f,y;
 	a = array(123);   //allocate an array of 123 intergers
 	s = struct(myst); //allocate a "myst" structure
 	b = bytes(3);     //allocate 3 bytes of memory
@@ -31,8 +36,8 @@ startup(argc, argv)
 	poke(b,2,0);
 	print(b);
 
-	f = t2;	
-	f.(100,2,3,4,5);
+	f = t2;		 // function pointer
+	f.(100,2,3,4,5); // indirect function call
 	f = f.();
 
 	n = 1 * 20 % 2 / 3 + (17 - 4); //that's all the operators that we have
@@ -41,9 +46,13 @@ startup(argc, argv)
 	s.myst.one = 10001; // to access a struct member we 
                             //put the name of the struct 
                             //then the member name
-	s.myst.next = "two";
-	s.myst.three = 3;
-	s.myst.four = '4';
+
+	s.myst.next = "two"; // string literal (nul terminated as in C)
+	s.myst.three = 3;    // integer constant
+	s.myst.four = '4';   // character constant (translated to integer)
+
+	i = a[1];	     // array access
+
 	a[0] = "yo";
 	a[122] = "lAst";
 
@@ -53,7 +62,13 @@ startup(argc, argv)
 	print("\n");
 	print(argv[argc-1]);
 	print2(argv[argc-1]);
-	switch (argc > 2) (      // switch is used a replacement of if/else
+
+	i = 0;
+	y = i;
+	while (i == y && i != y && i < y && i <= y && i > y && i >= y) (
+	);
+
+	switch (argc > 2) (      // switch is used as a replacement of if/else
 	+1:(	
 		print("yo \n");
 		i = 2;
@@ -71,17 +86,17 @@ startup(argc, argv)
 		print(s.myst.next);
 	));
 	free(a);
-	test();
+	test(); 	// function call
 	free(s.myst);
 	f = file_size(argv[1]);
-	switch(f > 0) (
-	+1:
-	2:
-	3:
-	-5: (
+	switch(f > 0) ( // a compare operation result is either +1, -1 or 0. 
+	-5: 2: 3:       // these are garbage, but are allowed
+	+1: (		// +1 is true
 		f = file_load(argv[1], f);
 		print(f);
-	));
+	),
+	-1: 0: (;)      // -1 or 0 are false
+	);
 	return 0;
 )
 

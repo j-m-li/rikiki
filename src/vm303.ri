@@ -146,7 +146,7 @@ vm3o3__high_op(self)
 )
 
 // store 'a' register to page memory
-vm3o3__sta(self, cell)
+vm3o3__st(self, cell)
 (
 	%p,r,i,b;
 	
@@ -168,7 +168,7 @@ vm3o3__sta(self, cell)
 )
 
 // load 'a' register from page memory
-vm3o3__lda(self, cell)
+vm3o3__ld(self, cell)
 (
 	%p,r,i,b;
 	p = self.vm3o3.pages;
@@ -195,6 +195,63 @@ vm3o3__ldi(self, r, i)
 	return 0;
 )
 
+// r.dest = r.src1 + a 
+vm3o3__add(self, dest, src1)
+(
+	%f,d,s1,s2;
+	s2 = get(self.vm3o3.a);
+	f = self.vm3o3.flag;
+	poke(f,0,0);
+	poke(f,1,0);
+	// FIXME
+)
+
+// a = -a
+vm3o3__neg(self)
+(
+	%f,o,v;
+	f = self.vm3o3.flag;
+	v = get(self.vm3o3.a);
+	o = peek(f,0);
+	poke(f,0,peek(f,1));
+	poke(f,1,o);
+	o = peek(v,0);
+	poke(v,0,peek(v,1));
+	poke(v,1,o);
+	o = peek(v,2);
+	poke(v,2,peek(v,3));
+	poke(v,3,o);
+)
+
+// a = a * 3
+vm3o3__mul(self)
+(
+	%v,f;
+	f = self.vm3o3.flag;
+	v = get(self.vm3o3.a);
+	poke(f,0,peek(v,2));
+	poke(f,1,peek(v,3));
+	
+	poke(v,2,peek(v,0));
+	poke(v,3,peek(v,1));
+	poke(v,0,0);
+	poke(v,1,0);
+)
+
+// a = a / 3
+vm3o3__div(self)
+(
+	%v,f;
+	f = self.vm3o3.flag;
+	v = get(self.vm3o3.a);
+	poke(f,0,peek(v,0));
+	poke(f,1,peek(v,1));
+	
+	poke(v,0,peek(v,2));
+	poke(v,1,peek(v,3));
+	poke(v,2,0);
+	poke(v,3,0);
+)
 
 // compare 2 registers
 vm3o3__cmp(self, ri1, ri2)
@@ -225,6 +282,22 @@ vm3o3__cmp(self, ri1, ri2)
 	return 0;
 )
 
+// branch
+// offset ==  0 -> beq
+// offset == -1 -> blt
+// offset == +1 -> bgt
+vm3o3__b(self, when, offset)
+(
+	%c,s;
+	c = get(self.vm3o3.flag);
+	switch(c == when) (
+	1:(
+		// FIXME add to local pc	
+	)
+	);
+	return 0;
+)
+
 // set current registers page index
 vm3o3__sel(self, id)
 (
@@ -247,17 +320,17 @@ vm3o3__reset(self)
 	vm3o3__ldi(self, 0, 0);
 
 	// write 0 (using register a)  to page[0]	
-	vm3o3__sta(self, -4); // -4  0
-	vm3o3__sta(self, -3); //     2
-	vm3o3__sta(self, -2); //     4
-	vm3o3__sta(self, -1); //     6
-	vm3o3__sta(self,  0); // 0   8
-	vm3o3__sta(self, +1); //    10
-	vm3o3__sta(self, +2); //    12
-	vm3o3__sta(self, +3); //    14
+	vm3o3__st(self, -4); // -4  0
+	vm3o3__st(self, -3); //     2
+	vm3o3__st(self, -2); //     4
+	vm3o3__st(self, -1); //     6
+	vm3o3__st(self,  0); // 0   8
+	vm3o3__st(self, +1); //    10
+	vm3o3__st(self, +2); //    12
+	vm3o3__st(self, +3); //    14
 
 	// transfer page[0] value to global program counter
-	vm3o3__sta(self, +4); 
+	vm3o3__st(self, +4); 
 
 	// compare reg a to reg a to clear the carry flag
 	vm3o3__cmp(self, 0,0); 
