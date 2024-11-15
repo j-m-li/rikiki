@@ -2,26 +2,26 @@
 // This software is dedicated to the public domain.
 //
  
-# include "std.ri"; // include an other source file
+include "std.ri"; // include an other source file
 
-#const MY_CONST 47; //define a constant
+const MY_CONST 47; //define a constant
 
-# struct myst ( // a structure with four members
+struct myst ( // a structure with four members
 	one, 
 	next,
 	three,
 	four
 ); 
 
-#test(); //Functions must be declared before calling them
-#t2(a,b); //everything after // is a comment till the end of line
+test(); //Functions must be declared before calling them
+t2(a,b); //everything after // is a comment till the end of line
 
-# startup(argc, argv) 
+startup(argc, argv) 
 (		            // definition of the entry point function
 
-	$i,a,s,b,end; //declaration of local variables
-	$n;
-	$f;
+	%i,a,s,b,end; //declaration of local variables
+	%n;
+	%f;
 	a = array(123);   //allocate an array of 123 intergers
 	s = struct(myst); //allocate a "myst" structure
 	b = bytes(3);     //allocate 3 bytes of memory
@@ -85,14 +85,14 @@
 	return 0;
 )
 
-# test()
+test()
 (
 	print("test\n"); //print a string
 	print2(MY_CONST); // print a number (print3 is for ternary encoded numbers)
 	t2(1,2);
 )
 
-#t2( a , b ) (
+t2( a , b ) (
 	print2(a+b);
 	print("\n");
 )

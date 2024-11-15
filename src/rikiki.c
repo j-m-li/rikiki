@@ -121,10 +121,9 @@ int indent(struct rik *st)
 	return 0;
 }
 
-int whitespaces(struct rik *st, int semi)
+int whitespaces(struct rik *st)
 {
 	int end;
-	semi = 0;
 	while (st->pos < st->end) {
 		switch (st->buf[st->pos]) {
 		case '\n':
@@ -135,10 +134,6 @@ int whitespaces(struct rik *st, int semi)
 		case '\r':
 			st->pos++;
 			break;
-		case ';':
-			if (!semi) {
-				return 0;
-			}
 		case '/':
 			if (st->buf[st->pos+1] != '/') {
 				return 0;
@@ -149,14 +144,12 @@ int whitespaces(struct rik *st, int semi)
 			while (!end && st->pos < st->end) {
 				switch (st->buf[st->pos]) {
 				case '\n':
-					st->line++;
 					end = 1;
 					break;
 				default:
 					st->pos++;
 				}
 			}
-			semi = 0;
 			break;
 		default:
 			return 0;
@@ -241,14 +234,14 @@ struct pair *named_parameters(struct rik *st)
 	int l;
 
 	p = pair_create(st);
-	if (whitespaces(st,0) || st->buf[st->pos] != '(') {
+	if (whitespaces(st) || st->buf[st->pos] != '(') {
 		error("syntax error expecting '('", st);
 	}
 	st->pos++;
 	allo = 254;
 	v = malloc(allo + 2);
 	i = 0;
-	while (!whitespaces(st,1) && st->buf[st->pos] != ')') {
+	while (!whitespaces(st) && st->buf[st->pos] != ')') {
 		b = st->buf + st->pos;
 		l = id_len(b);
 		if (l < 1) {
@@ -269,7 +262,7 @@ struct pair *named_parameters(struct rik *st)
 			b++;
 			l--;
 		}
-		if (whitespaces(st,1) || (st->buf[st->pos] != ',')) 
+		if (whitespaces(st) || (st->buf[st->pos] != ',')) 
 		{
 			if (st->buf[st->pos] != ')') {
 				error("syntax error expecting ','", st);
@@ -331,7 +324,7 @@ int const_process(struct rik *st)
 	int o;
 
 	p = pair_create(st);
-	whitespaces(st,0);
+	whitespaces(st);
 	c = st->buf + st->pos;
 	l = 0;
 	while (st->pos < st->end && c[l] != ';') {
@@ -343,7 +336,7 @@ int const_process(struct rik *st)
 	p->value = strdup(c);
 	c[l] = o;
 	printf("#define %s %s\n", p->name, p->value);
-	whitespaces(st,0);
+	whitespaces(st);
 	while (st->parent) {
 		st = st->parent;
 	}
@@ -469,7 +462,7 @@ int var_decl(struct rik *st)
 		pst->vars = malloc(pst->vars_allo);
 		pst->vars[0] == '\0';
 	}
-	whitespaces(st,0);
+	whitespaces(st);
 	b = st->buf + st->pos;
 	while (*b != ';' && st->pos < st->end) {
 		l = id_len(b);
@@ -488,7 +481,7 @@ int var_decl(struct rik *st)
 			b++;
 			l--;
 		}	
-		whitespaces(st,0);
+		whitespaces(st);
 		pst->vars[i] = '\0';
 		printf("\tvar %s;\n", v);
 		if (st->buf[st->pos] == ',') {
@@ -496,11 +489,11 @@ int var_decl(struct rik *st)
 			i++;
 			pst->vars[i] = '\0';
 			st->pos++;
-			whitespaces(st,0);
+			whitespaces(st);
 		}
 		b = st->buf + st->pos;
 	}
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] == ';') {
 		st->pos++;
 	}
@@ -514,14 +507,14 @@ int op_group(struct rik *st)
 	printf("(");
 	st->pos++;
 	while (!end && st->pos < st->end) {
-		whitespaces(st,0);
+		whitespaces(st);
 		if (st->buf[st->pos] == ')') {
 			end = 1;
 		} else if (st->buf[st->pos] == ';') {
 			st->pos++;
 		} else {
 			expression(st);
-			whitespaces(st,0);
+			whitespaces(st);
 		}
 	}
 	if (st->buf[st->pos] != ')') {
@@ -541,14 +534,14 @@ int op_call(struct rik *st, char *name, int len)
 	printf("(");
 	st->pos++;
 	while (!end && st->pos < st->end) {
-		whitespaces(st,0);
+		whitespaces(st);
 		if (st->buf[st->pos] == ')') {
 			end = 1;
 		} else if (st->buf[st->pos] == ';') {
 			st->pos++;
 		} else {
 			expression(st);
-			whitespaces(st,0);
+			whitespaces(st);
 			if (st->buf[st->pos] == ',') {
 				printf(", ");
 				st->pos++;
@@ -569,7 +562,7 @@ int op_dot(struct rik *st, char *name, int len)
 	int l;
 	char *b;
 	st->pos++;
-	whitespaces(st,0);
+	whitespaces(st);
 	b = st->buf + st->pos;
 	if (*b == '(') {
 		printf("((var (*)())");
@@ -586,14 +579,14 @@ int op_dot(struct rik *st, char *name, int len)
 	printf("*)");
 	printsub(name, len);
 	st->pos += l;
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '.') {
 		printf("))");
 		return 0;
 	}
 	printf(")->");
 	st->pos++;
-	whitespaces(st,0);
+	whitespaces(st);
 	b = st->buf + st->pos;
 	l = id_len(b);
 	if (l < 1) {
@@ -615,9 +608,9 @@ int op_index(struct rik *st, char *name, int len)
 	printf("(((var*)");
 	printsub(name, len);
 	printf(")[");
-	whitespaces(st,0);
+	whitespaces(st);
 	expression(st);
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != ']') {
 		error("expecting ']'", st);
 	}
@@ -628,15 +621,15 @@ int op_index(struct rik *st, char *name, int len)
 
 int keyw_bytes(struct rik *st)
 {
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("missing '('", st);
 	}
 	st->pos++;
-	whitespaces(st,0);
+	whitespaces(st);
 	printf("malloc(((");
 	expression(st);
-	whitespaces(st,0);
+	whitespaces(st);
 	printf(") & ~(sizeof(var) - 1)) + sizeof(var))");
 	if (st->buf[st->pos] != ')') {
 		error("missing ')'", st);
@@ -648,15 +641,15 @@ int keyw_bytes(struct rik *st)
 
 int keyw_array(struct rik *st)
 {
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("missing '('", st);
 	}
 	st->pos++;
-	whitespaces(st,0);
+	whitespaces(st);
 	printf("malloc((");
 	expression(st);
-	whitespaces(st,0);
+	whitespaces(st);
 	printf(") * sizeof(var))");
 	if (st->buf[st->pos] != ')') {
 		error("missing ')'", st);
@@ -667,7 +660,7 @@ int keyw_array(struct rik *st)
 
 int keyw_free(struct rik *st)
 {
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("missing '('", st);
 	}
@@ -696,16 +689,16 @@ int keyw_struct(struct rik *st)
 {
 	char *b;
 	int l;
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("missing '('", st);
 	}
 	st->pos++;
-	whitespaces(st,0);
+	whitespaces(st);
 	b = st->buf + st->pos;
 	l = id_len(b);
 	st->pos += l;
-	whitespaces(st,0);
+	whitespaces(st);
 	printf("malloc(sizeof(struct ");
 	while (l > 0) {
 		printf("%c", *b);
@@ -729,7 +722,7 @@ int body(struct rik *st)
 	st->pos++;
 	st->indent++;
 	while (!end && st->pos < st->end) {
-		whitespaces(st,0);
+		whitespaces(st);
 		switch(st->buf[st->pos]) {
 		case ')':
 			end = 1;
@@ -752,7 +745,7 @@ int keyw_switch(struct rik *st)
 	int l;
 	int end = 0;
 
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("missing '('", st);
 	}
@@ -763,24 +756,24 @@ int keyw_switch(struct rik *st)
 		error("missing ')'", st);
 	}
 	st->pos++;
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("missing ') ('", st);
 	}
 	st->pos++;
 	printf(")) {\n");
 	while (!end && st->pos < st->end) {
-		whitespaces(st,0);
+		whitespaces(st);
 		indent(st);
 		printf("case ");
 		constant(st);
 		printf("%s:", st->tmp);
-		whitespaces(st,0);
+		whitespaces(st);
 		if (st->buf[st->pos] != ':') {
 			error("missing ':'", st);
 		}
 		st->pos++;
-		whitespaces(st,0);
+		whitespaces(st);
 		switch (st->buf[st->pos]) {
 		case '(':
 			printf(" {\n");
@@ -788,7 +781,7 @@ int keyw_switch(struct rik *st)
 			indent(st);
 			printf("\tbreak;\n");
 			indent(st);
-			whitespaces(st,0);
+			whitespaces(st);
 			printf("}\n");
 			if (st->buf[st->pos] != ',') {
 				end = 1;
@@ -814,7 +807,7 @@ int keyw_switch(struct rik *st)
 }
 int keyw_while(struct rik *st)
 {
-	whitespaces(st,0);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("missing '('", st);
 	}
@@ -825,7 +818,7 @@ int keyw_while(struct rik *st)
 		error("missing ')'", st);
 	}
 	st->pos++;
-	whitespaces(st,0);
+	whitespaces(st);
 	printf(") {\n");
 	body(st);
 	if (st->buf[st->pos] != ';') {
@@ -942,11 +935,11 @@ int expression(struct rik *st)
 	char *b;
 	int op = 0;
 
-	while(!end && st->pos < st->end && !whitespaces(st,0)) {
+	while(!end && st->pos < st->end && !whitespaces(st)) {
 		idi = st->pos;
 		idl = id_len(st->buf + st->pos);
 		st->pos += idl;
-		whitespaces(st, 0);
+		whitespaces(st);
 		b = st->buf + st->pos;
 		if (!keyword(st, st->buf + idi, idl)) {
 			idl = 0;
@@ -975,10 +968,10 @@ int expression(struct rik *st)
 				break;
 			}
 			if (func_call(st, st->buf + idi, idl) == 0) {
-				whitespaces(st, 1);
+				whitespaces(st);
 			} else {
 				op_call(st, st->buf + idi, idl);
-				whitespaces(st, 1);
+				whitespaces(st);
 			}
 			return 0;
 			break;
@@ -1115,14 +1108,10 @@ int expression(struct rik *st)
 			op = '"';
 			break;
 		default:
-			/*if (func_call(st, st->buf + idi, idl) == 0) {
-				whitespaces(st, 1);
-				return 0;
-			}*/
 			break;	
 		}
 	}
-	whitespaces(st, 0);
+	whitespaces(st);
 	return 0;
 }
 
@@ -1134,7 +1123,7 @@ int func_process(struct rik *st)
 	int end = 0;
 	st->retok = 0;
 	declare_func(st);
-	if (whitespaces(st,0) || (st->buf[st->pos] != '(')) {
+	if (whitespaces(st) || (st->buf[st->pos] != '(')) {
 		if (st->buf[st->pos] != ';') {
 				error("expecting ';' or '('", st);
 		} else {
@@ -1142,16 +1131,16 @@ int func_process(struct rik *st)
 			return 0;
 		}
 	}
-	whitespaces(st,1);
+	whitespaces(st);
 	if (st->buf[st->pos] != '(') {
 		error("expecting '('", st);
 	}
 	st->indent = 1;
 	st->pos++;
 	printf("\n{\n");
-	while (!end && !whitespaces(st,0)) {
+	while (!end && !whitespaces(st)) {
 		switch (st->buf[st->pos]) {
-		case '$':
+		case '%':
 			var_decl(st);
 			break;
 		case ')':
@@ -1166,7 +1155,7 @@ int func_process(struct rik *st)
 			break;
 		}
 	}
-	whitespaces(st,1);
+	whitespaces(st);
 	if (!st->retok) {
 		printf("\treturn 0;\n");
 	}
@@ -1210,8 +1199,8 @@ int include_process(struct rik *st)
 	}
 	name = fn + i;
 	while (i < 2040) {
-		st->pos++;
 		if (*b != '"') {
+			st->pos++;
 			fn[i] = *b;
 			b++;
 			i++;
@@ -1222,6 +1211,12 @@ int include_process(struct rik *st)
 	if (*b != '"') {
 		error("syntax error", st);
 	}
+	st->pos++;
+	whitespaces(st);
+	if (st->buf[st->pos] != ';') {
+		error("syntax error ;", st);
+	}
+
 	fn[i] = '\0';
 	nst = load(fn);
 	if (nst) {
@@ -1253,18 +1248,15 @@ int include_process(struct rik *st)
 int k2c(struct rik *st)
 {
 	char *b;
-	whitespaces(st,1);
+	whitespaces(st);
 	while (st->pos < st->end) {
-		whitespaces(st,0);
+		whitespaces(st);
 		switch (st->state) {
 		case 0:
-			switch (st->buf[st->pos]) {
-			case '#':
-				st->pos++;
-				if (whitespaces(st,1)) {
-					error("syntax error", st);
-				}
-				b = st->buf + st->pos;
+			b = st->buf + st->pos;
+			if (*b == '_' || (*b >= 'a' && *b <= 'z') ||
+				(*b >= 'A' && *b <= 'Z')) 
+			{
 				switch (b[0]) {
 				case 'i':
 					if (!strncmp(b, "include",7)) {
@@ -1286,15 +1278,15 @@ int k2c(struct rik *st)
 					break;
 				}
 				if (st->state == 0) {
-					if (whitespaces(st,1)) {
+					if (whitespaces(st)) {
 						error("syntax error", st);
 					}
 					st->state = 1;
 				}
-				break;
-			default:
+			} else if (*b == ';') {
 				st->pos++;
-				break;
+			} else if (st->pos < st->end) {
+				error("syntax error...", st);
 			}
 			break;
 		case 2: /* include */
@@ -1319,7 +1311,7 @@ int k2c(struct rik *st)
 			st->pos++;
 			st->state = 0;
 		}
-		whitespaces(st,1);
+		whitespaces(st);
 	}
 }
 

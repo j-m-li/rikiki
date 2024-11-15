@@ -1,33 +1,36 @@
+//          3o3 ternary computer emulator
 //
 // This software is dedicated to the public domain.
 //
 
 // ternary trit notation:
-// "01" = +1
-// "10" = -1
-// "00" =  0
+// 01 = +1
+// 10 = -1
+// 00 =  0
 
-#include "std.ri";
+include "std.ri";
 
-#struct vm3o3 (
-	a,
-	b,
-	c,
+struct vm3o3 (
+	b, // reg -1
+	a, // reg  0
+	c, // reg +1
 	pc,
+	gpc,
 	pages,
 	flag,
-	bank
+	sel
 );
 
-#vm3o3__new()
+vm3o3__new()
 (
-	$self,p;
+	%self,p;
 	self = struct(vm3o3);
 	self.vm3o3.a = bytes(4); // 4 byte to represent 2 trit in ascii
 	self.vm3o3.b = bytes(4);
 	self.vm3o3.c = bytes(4);
 	self.vm3o3.pc = bytes(4);
-	self.vm3o3.bank = bytes(4);
+	self.vm3o3.gpc = bytes(32);
+	self.vm3o3.sel = bytes(4);
 	p = array(6);
 	self.vm3o3.pages = p;
 	p[0] = bytes(32); // 16 trit
@@ -40,14 +43,15 @@
 	return self;
 )
 
-#vm3o3__dispose(self)
+vm3o3__dispose(self)
 (
-	$p;
+	%p;
 	free(self.vm3o3.a);
 	free(self.vm3o3.b);
 	free(self.vm3o3.c);
 	free(self.vm3o3.pc);
-	free(self.vm3o3.bank);
+	free(self.vm3o3.gpc);
+	free(self.vm3o3.sel);
 	p = self.vm3o3.pages;
 	free(p[0]);
 	free(p[1]);
@@ -61,93 +65,219 @@
 	return 0;
 )
 
-#t2b(n)
+// binary to 2 trit
+// r: pointer to ternary output 
+// n: binary input
+set(r, n) 
 (
-	$r;
+	poke(r,0,0);
+	poke(r,1,0);
+	poke(r,2,0);
+	poke(r,3,0);
+
+	switch(n) (
+	-4:(poke(r,1,1); poke(r,3,1);),	
+	-3:(poke(r,3,1);),	
+	-2:(poke(r,0,1); poke(r,3,1);),	
+
+	-1:(poke(r,1,1);),	
+	 0:(;),	
+	+1:(poke(r,0,1);),	
+
+	+2:(poke(r,1,1); poke(r,2,1);),	
+	+3:(poke(r,2,1);),	
+	+4:(poke(r,0,1); poke(r,2,1);)	
+	);
+)
+
+// 2 trit to binary
+get(n)
+(
+	%r;
 	r = 0;
-	switch(n[0]) (
-	'1': ( r = r + 1;
+	switch(peek(n,0)) (
+	1: ( r = r + 1;
 	));
-	switch(n[1]) (
-	'1': ( r = r - 1;
+	switch(peek(n,1)) (
+	1: ( r = r - 1;
 	));
-	switch(n[2]) (
-	'1': ( r = r + 3;
+	switch(peek(n,2)) (
+	1: ( r = r + 3;
 	));
-	switch(n[3]) (
-	'1': ( r = r - 3;
+	switch(peek(n,3)) (
+	1: ( r = r - 3;
 	));
 	return r;	
 )
 
-// store 'a' register
-#vm3o3__sta(self, cell)
+// write the current page to the global program counter
+vm3o3__write_to_gpc(self)
 (
-	$p,r,i,b;
+	%b,i,r,p,gpc;
+	p = self.vm3o3.pages;
+	gpc = self.vm3o3.gpc;
+	b = get(self.vm3o3.sel) + 4;
+	r = p[b];
+	i = 0;
+	// byte to byte copy
+	while (i < 32) (
+		poke(gpc,i,peek(r,i));
+		i = i + 1;
+	);
+	set(self.vm3o3.pc,-4); // FIXME -4 or +4 ?
+)
+
+// High level operations
+vm3o3__high_op(self)
+(
+	%op;
+	op = get(self.vm3o3.a);
+	switch(op) (
+	-4: (),
+	-3: (),
+	-2: (),
+	-1: (),
+	 0: (vm3o3__write_to_gpc(self)),
+	+1: (),
+	+2: (),
+	+3: (),
+	+4: ()
+	);
+)
+
+// store 'a' register to page memory
+vm3o3__sta(self, cell)
+(
+	%p,r,i,b;
+	
+	switch(cell) (
+	+4: (
+		// we have only 8 2 trit cells per page
+		// the 9's is trigering high level operations
+		return vm3o3__high_op(self);
+	));
 	p = self.vm3o3.pages;
 	r = self.vm3o3.a;
-	i = t2b(cell) + 4;
-	b = t2b(self.vm3o3.bank);
-	poke(p[b],i*2,r[0]);
-	poke(p[b],i*2+1,r[1]);
+	b = get(self.vm3o3.sel) + 4;
+	i = (cell + 4) * 4;
+	poke(p[b],i,r[0]);
+	poke(p[b],i+1,r[1]);
+	poke(p[b],i+2,r[2]);
+	poke(p[b],i+3,r[3]);
 	return 0;
 )
 
-// load 'a' register
-#vm3o3__lda(self, cell)
+// load 'a' register from page memory
+vm3o3__lda(self, cell)
 (
-	$p,r,i,b;
+	%p,r,i,b;
 	p = self.vm3o3.pages;
 	r = self.vm3o3.a;
-	i = t2b(cell) + 4;
-	b = t2b(self.vm3o3.bank);
-	r[0] = peek(p[b],i*2);
-	r[1] = peek(p[b],i*2+1);
+	b = get(self.vm3o3.sel) + 4;
+	i = (cell + 4) * 4;
+	poke(r,0,peek(p[b],i));
+	poke(r,1,peek(p[b],i+1));
+	poke(r,2,peek(p[b],i+2));
+	poke(r,3,peek(p[b],i+3));
+	return 0;
+)
+
+//  load immediate to register
+vm3o3__ldi(self, r, i)
+(
+	%r1;
+	switch(r) (
+	-1: (r1 = self.vm3o3.b;),
+	 0: (r1 = self.vm3o3.a;),
+	+1: (r1 = self.vm3o3.c;)
+	);
+	set(r1, i);
 	return 0;
 )
 
 
-#vm3o3__reset(self)
+// compare 2 registers
+vm3o3__cmp(self, ri1, ri2)
 (
-	// set bank (page access) to 0 -> the global (16 trit) program counter
-	poke(self.vm3o3.bank,0,'0');
-	poke(self.vm3o3.bank,1,'0');
+	%r1,r2;
+	%a,b,f;
+	switch(ri1) (
+	-1: (r1 = self.vm3o3.b;),
+	 0: (r1 = self.vm3o3.a;),
+	+1: (r1 = self.vm3o3.c;)
+	);
+	switch(ri2) (
+	-1: (r2 = self.vm3o3.b;),
+	 0: (r2 = self.vm3o3.a;),
+	+1: (r2 = self.vm3o3.c;)
+	);
+	a = get(r1);
+	b = get(r2);
+	f = self.vm3o3.flag;
+	poke(f,0,0);
+	poke(f,1,0);
+	switch(a > b) (
+	1: (poke(f,0,1);)
+	);
+	switch(a < b) (
+	1: (poke(f,1,1);)
+	);
+	return 0;
+)
+
+// set current registers page index
+vm3o3__sel(self, id)
+(
+	switch(id > 5) (
+	1: (return 0;) // we only have 6 pages
+	);
+	set(self.vm3o3.sel, id);
+	return 0;
+)
+
+vm3o3__reset(self)
+(
+	// set sel (page selection) to 0 
+	vm3o3__sel(self, 0);
 
 	// set the local (2 trit) program counter to 0
-	poke(self.vm3o3.pc,0,'0');
-	poke(self.vm3o3.pc,1,'0');
-
-	// set a register to 0
-	poke(self.vm3o3.a,0,'0');
-	poke(self.vm3o3.a,1,'0');
-
-	// write 0 (using reg a)  to the global program counter	
-	vm3o3__sta(self, "1010"); // -4  0
-	vm3o3__sta(self, "1000"); //     2
-	vm3o3__sta(self, "1001"); //     4
-	vm3o3__sta(self, "0010"); //     6
-	vm3o3__sta(self, "0000"); // 0   8
-	vm3o3__sta(self, "0001"); //    10
-	vm3o3__sta(self, "0110"); //    12
-	vm3o3__sta(self, "0100"); //    14
-	vm3o3__sta(self, "0101"); // +4 validate
+	set(self.vm3o3.pc, 0);
 	
+	// set register a to 0
+	vm3o3__ldi(self, 0, 0);
+
+	// write 0 (using register a)  to page[0]	
+	vm3o3__sta(self, -4); // -4  0
+	vm3o3__sta(self, -3); //     2
+	vm3o3__sta(self, -2); //     4
+	vm3o3__sta(self, -1); //     6
+	vm3o3__sta(self,  0); // 0   8
+	vm3o3__sta(self, +1); //    10
+	vm3o3__sta(self, +2); //    12
+	vm3o3__sta(self, +3); //    14
+
+	// transfer page[0] value to global program counter
+	vm3o3__sta(self, +4); 
+
+	// compare reg a to reg a to clear the carry flag
+	vm3o3__cmp(self, 0,0); 
 	return 0;
 )
 
 
-#vm3o3__run(self)
+vm3o3__run(self)
 (
 )
 
-#startup(argc, argv) 
+startup(argc, argv) 
 (
-	$vm;
-	print("3o3 Virtual Machine\n");
+	%vm;
+	print("3o3 ternary Virtual Machine\n");
 	vm = vm3o3__new();
 	vm3o3__reset(vm);
 	vm3o3__run(vm);
 	vm3o3__dispose(vm);
-
+	print("done.\n");
 	return 0;
 )
+

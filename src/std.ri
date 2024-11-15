@@ -1,15 +1,15 @@
 
-@print(string);
-@print2(binary_number);
-@print3(ternary_number);
-@ter2bin(bin);
-@bin2ter(ter);
-@and2(a,b);
-@or2(a,b);
-@xor2(a,b);
-@inv2(a);
-@cons3(a,b);
-@any3(a,b);
-@xor3(a,b);
-@neg3(a);
+print(string);
+print2(binary_number);
+print3(ternary_number);
+ter2bin(bin);
+bin2ter(ter);
+and2(a,b);
+or2(a,b);
+xor2(a,b);
+inv2(a);
+cons3(a,b);
+any3(a,b);
+xor3(a,b);
+neg3(a);
 
