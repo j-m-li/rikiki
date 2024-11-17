@@ -13,8 +13,10 @@ DIR=$(dirname "$0")
 (cd ${DIR}/bin; cc -Wall -o a t.c; ./a)
 (cd ${DIR}/bin;./rkc ../src/hello.ri > h.c)
 (cd ${DIR}/bin; cc -Wall -o hello h.c; ./hello)
+(cd ${DIR}/bin;./rkc ../src/asm303.ri > as.c)
+(cd ${DIR}/bin; cc -Wall -o as3 as.c; ./as3 -o test.raw ../src/test.asm)
 (cd ${DIR}/bin;./rkc ../src/vm303.ri > vm.c)
-(cd ${DIR}/bin; cc -Wall -o vm vm.c; ./vm)
+(cd ${DIR}/bin; cc -Wall -o vm vm.c; ./vm test.raw)
 exit $?
 :CMDENTRY
 

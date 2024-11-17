@@ -1,0 +1,118 @@
+//                  3o3 ternary cpu assembler
+//
+//          MMXXIV November 17 PUBLIC DOMAIN by JML
+//
+//     The authors and contributors disclaim copyright, patents
+//           and all related rights to this software.
+//
+// Anyone is free to copy, modify, publish, use, compile, sell, or
+// distribute this software, either in source code form or as a
+// compiled binary, for any purpose, commercial or non-commercial,
+// and by any means.
+//
+// The authors waive all rights to patents, both currently owned
+// by the authors or acquired in the future, that are necessarily
+// infringed by this software, relating to make, have made, repair,
+// use, sell, import, transfer, distribute or configure hardware
+// or software in finished or intermediate form, whether by run,
+// manufacture, assembly, testing, compiling, processing, loading
+// or applying this software or otherwise.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT OF ANY PATENT, COPYRIGHT, TRADE SECRET OR OTHER
+// PROPRIETARY RIGHT.  IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR
+// ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+// CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+
+include "std.ri";
+
+struct as (
+	in,
+	insize,
+	inpos,
+	line
+);
+
+as__new()
+(
+	%self;
+	self = struct(as);
+	return self;
+)
+
+as__dispose(self)
+(
+	free(self);
+)
+
+as__load(self, src)
+(
+	self.as.insize = file_size(src);
+	switch (self.as.insize < 1) (
+	1:(print("invalid source file\n");
+		exit(-1);));
+
+	self.as.in = file_load(src, self.as.insize);
+	switch (self.as.in) (
+	0:-1:(print("cannot load source file\n");
+		exit(-1);));
+	return 0;
+)
+
+as__line(self)
+(
+	%s,e,b,c;
+	self.as.line = self.as.line + 1;
+	s = self.as.inpos;
+	e = s;
+	b = self.as.in;
+	c = peek(b,e);
+	while (c != '\n' && c != 0) (
+		e = e + 1;
+		c = peek(b,e);
+	);
+	switch (c != 0) (
+	1: (self.as.inpos = e + 1;),
+	0:-1:(self.as.inpos = self.as.insize;)
+	);
+	print2(self.as.line);
+	print(":\n");
+)
+
+as__assemble(self, dst)
+(
+	self.as.inpos = 0;
+	self.as.line = 0;
+	while (self.as.inpos < self.as.insize) (
+		as__line(self);
+	);
+	return 0;
+)
+
+startup(argc, argv) 
+(
+	%app;
+
+	switch (argc != 4) (
+	1: (
+		print("usage: ");
+		print(argv[0]);
+		print(" -o prog.raw src.asm\n");
+		return -1;
+	));
+	
+	switch (strcmp(argv[1], "-o")) (
+	1: (
+		print("first command line argument must be -o\n");
+		return -1;
+	)); 
+	app = as__new();
+	as__load(app, argv[3]);
+	as__assemble(app, argv[2]);
+	as__dispose(app);
+	return 0;
+)

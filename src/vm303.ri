@@ -127,7 +127,7 @@ vm3o3__write_to_pc(self)
 vm3o3__high_op(self)
 (
 	%op;
-	op = get(self.vm3o3.a);
+	op = get(self.vm3o3.a); // opration select by a
 	switch(op) (
 	-4: (),
 	-3: (),
@@ -318,12 +318,28 @@ vm3o3__add(self, dest, src1)
 
 )
 
+// swap a and r
+vm3o3__swp(self,r1)
+(
+	%r,o,v,i;
+	r = vm3o3__reg(self, r1);
+	v = self.vm3o3.a;
+	i = 0;
+	while (i < 4) (
+		o = peek(r,i);
+		poke(r,i,peek(v,i));
+		poke(v,i,o);
+		i = 1 + 1;
+	);
+)
+
+
 // a = -a
 vm3o3__neg(self)
 (
 	%f,o,v;
 	f = self.vm3o3.flag;
-	v = get(self.vm3o3.a);
+	v = self.vm3o3.a;
 	o = peek(f,0);
 	poke(f,0,peek(f,1));
 	poke(f,1,o);
@@ -340,7 +356,7 @@ vm3o3__mul(self)
 (
 	%v,f;
 	f = self.vm3o3.flag;
-	v = get(self.vm3o3.a);
+	v = self.vm3o3.a;
 	poke(f,0,peek(v,2));
 	poke(f,1,peek(v,3));
 	
@@ -355,7 +371,7 @@ vm3o3__div(self)
 (
 	%v,f;
 	f = self.vm3o3.flag;
-	v = get(self.vm3o3.a);
+	v = self.vm3o3.a;
 	poke(f,0,peek(v,0));
 	poke(f,1,peek(v,1));
 	
@@ -370,6 +386,10 @@ vm3o3__cmp(self, ri1, ri2)
 (
 	%r1,r2;
 	%a,b,f;
+	switch (ri1 == ri2 && ri1 != 0) (
+	1:(
+		return vm3o3__swp(self, ri1);
+	));
 	r1 = vm3o3__reg(self, ri1);
 	r2 = vm3o3__reg(self, ri2);
 	a = get(r1);
