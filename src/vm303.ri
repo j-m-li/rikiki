@@ -202,9 +202,11 @@ vm3o3__reg(self, r)
 	return 0;
 )
 
+
 vm3o3__getpc(self)
 (
 	%m,i,j,pc,n;
+
 	pc = self.vm3o3.pc;
 	m = 1; // 3^0
 	i = 0;

@@ -107,7 +107,7 @@ char *file_load(char *path, int size)
 
 int error(char *txt, struct rik *st)
 {
-	printf("#error %s @ line %d\n", txt, st->line);
+	printf("\n#error \"%s @ line %d in %s\"\n", txt, st->line, st->file);
 	exit(-1);
 }
 
@@ -1108,6 +1108,7 @@ int expression(struct rik *st)
 			op = '"';
 			break;
 		default:
+			error("syntax error.", st);
 			break;	
 		}
 	}
