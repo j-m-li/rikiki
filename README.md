@@ -17,5 +17,7 @@ startup(argc, argv) (
 see the src/spec.ri file for an example of all features.
 
 
-![yin yang yuan](doc/3.png)
+
+https://research.swtch.com/nih
+
 

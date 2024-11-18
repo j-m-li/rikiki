@@ -10,7 +10,7 @@ entry:
 	add c,a,b
 	add a,a,a
 	add b,a,a
-	add c,a,a
+	add c,a,a 
 
 	ldi a,-4
 	ldi a,0
