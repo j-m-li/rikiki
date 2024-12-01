@@ -7,7 +7,7 @@
 // integer, a reference, a one dimension array of integer/reference, a 
 // reference to a byte array or a function reference.
 
-include("std"); // include an other source file
+await import("./std.mjs");
 
 const MY_CONST = 47; //define a constant
 
@@ -18,8 +18,8 @@ class myst { // a structure with four members
 	four;
 }; 
 
-function test(){}; //Functions must be declared before calling them
-function t2(a,b){}; //everything after // is a comment till the end of line
+//function test(){}; //Functions must be declared before calling them
+//function t2(a,b){}; //everything after // is a comment till the end of line
 
 function startup(argc, argv) 
 {		            // definition of the entry point function
@@ -106,6 +106,9 @@ function startup(argc, argv)
 	default: 
 	case false: break;      // -1 or 0 are false
 	};
+	
+	f = new RIKIKI_CLASS();
+	print(RIKIKI);
 	return 0;
 }
 
@@ -121,4 +124,6 @@ function t2( a , b ) {
 	print2(a+b);
 	print(_("\n"));
 }
+
+end(startup);
 

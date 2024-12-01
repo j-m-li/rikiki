@@ -1,4 +1,0 @@
-include "std.ri";
-startup(argc, argv) begin
-    print("Hello world!\n");
-end

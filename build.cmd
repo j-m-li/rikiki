@@ -8,10 +8,8 @@ echo "========== rikiki build ${SHELL} ================="
 DIR=$(dirname "$0")
 (mkdir -p bin;)
 (echo build .. $2)
-(cd ${DIR}/bin; cat ../src/std.js ../src/spec.js ../src/end.js > t.js)
-(cd ${DIR}/bin; node ./t.js)
-(cd ${DIR}/bin;./rkc ../src/hello.ri > h.c)
-(cd ${DIR}/bin; cc -Wall -o hello h.c; ./hello)
+(cd ${DIR}/bin; node ../src/spec.mjs)
+(cd ${DIR}/bin; node ../src/hello.mjs)
 exit
 (cd ${DIR}/bin;./rkc ../src/quine.ri > q.c)
 (cd ${DIR}/bin; cc -Wall -o quine q.c; ./quine)

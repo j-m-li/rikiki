@@ -4,20 +4,24 @@ rikiki programming language
 
 A smaller C than C.
 
+A subset of JavaScript !
 
 ## Hello World
 ```
-include "std.ri";
-startup(argc, argv) (
-    print("Hello world!\n");
-)
+await import("./std.mjs");
+function startup(argc, argv)
+{
+    print(_("Hello world!\n"));
+}
+end(startup);
 ```
 
 
-see the src/spec.ri file for an example of all features.
+see the src/spec.mjs file for an example of all features.
 
 
 
 https://research.swtch.com/nih
 
+"Super trooper walking on a fine day..."
 
