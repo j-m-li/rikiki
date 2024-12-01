@@ -87,4 +87,5 @@ var file_save(var path, var size, var buf)
 
 
 #define strcmp(a,b) strcmp((void*)a, (void*)b)
+#define strdup(a) strdup((void*)a)
 

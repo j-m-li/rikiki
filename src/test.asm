@@ -1,5 +1,6 @@
 ; test.asm
 
+.code32
 .org 0
 entry:
 	add a,a,c

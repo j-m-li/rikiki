@@ -1,0 +1,4 @@
+include "std.ri";
+startup(x,y)(%s,c,i;s=strdup(
+"include /std.ri/;*startup(x,y)(%s,c,i;s=strdup(*/);i=0;c=0;c=peek(s,i);while(c!=0)(switch(c)(42:(poke(s,i,10);),47:(poke(s,i,34);));i=i+1;c=peek(s,i););print(s);)/*;";
+);i=0;c=0;c=peek(s,i);while(c!=0)(switch(c)(42:(poke(s,i,10);),47:(poke(s,i,34);));i=i+1;c=peek(s,i););print(s);)

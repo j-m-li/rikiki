@@ -1,0 +1,22 @@
+
+struct buf (
+	data,
+	size,
+	alloced
+);
+
+buf__new(size)
+(
+	%self;
+	self = struct(buf);
+	self.buf.data = bytes(size * 8);
+	self.buf.size = 0;
+	self.buf.alloced = size;
+	return self;
+)
+
+buf__dispose(self)
+(
+	free(self);
+)
+

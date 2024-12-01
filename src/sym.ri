@@ -1,0 +1,124 @@
+
+include "buf.ri";
+
+struct sym (
+	symbols,
+	types,
+	values,
+	alloced,
+	size
+);
+
+sym__new()
+(
+	%self,s;
+	s = 32;
+	self = struct(sym);
+	self.sym.symbols = array(s);
+	self.sym.types = array(s);
+	self.sym.values = array(s);
+	self.sym.alloced = s;
+	self.sym.size = 0;
+	return self;
+)
+
+sym__dispose(self)
+(
+	free(self.sym.symbols);
+	free(self.sym.types);
+	free(self.sym.values);
+	free(self);
+)
+
+sym__cmp(self, s1, s2, len)
+(
+	%i,c;
+	i = 0;
+	while (i < len) (
+		c = peek(s1,i) - peek(s2,i);
+	//	print(" ");
+	//	print2(c);
+	//	print(" ");
+		switch (c == 0) (
+		0:-1:(return c;)
+		);
+		i = i + 1;
+	);
+	return 0;
+)
+ 
+sym__get_index(self, name, len)
+(
+	%i,s,a;
+	i = 0;
+	s = self.sym.size;
+	a = self.sym.symbols;
+	while (i < s) (
+		switch(!sym__cmp(self, a[i], name, len)) (
+		1: (return i;)
+		);
+		i = i + 1;
+	);
+	return -1;
+)
+
+sym__get_type(self, index)
+(
+	%a;
+	switch(index >= self.sym.size) (
+	1: (return 0;)
+	);
+	a = self.sym.types;
+	return a[index];		
+)
+
+sym__get_value(self, index)
+(
+	%a;
+	switch(index >= self.sym.size) (
+	1: (return 0;)
+	);
+	a = self.sym.values;
+	return a[index];		
+)
+
+
+sym__realloc(self,s,n,a)
+(
+	%i,na;
+	na = array(n);
+	i = 0;
+	while (i < s) (
+		na[i] = a[i];
+		i = i + 1;
+	);
+	return na;
+)
+
+sym__grow(self, new_size)
+(
+	%s,n;
+	s = self.sym.size;
+	n = s + new_size;
+	self.sym.symbols = sym__realloc(self,s,n,self.sym.symbols);
+	self.sym.types = sym__realloc(self,s,n,self.sym.types);
+	self.sym.values = sym__realloc(self,s,n,self.sym.values);
+	self.sym.size = n;
+)
+
+sym__add(self, name, type, value)
+(
+	%i,a;
+	i = self.sym.size;
+	switch(self.sym.alloced <= i + 1) (
+	1: (sym__grow(self, 32);)
+	);
+	a = self.sym.symbols;
+	a[i] = name;
+	a = self.sym.types;
+	a[i] = type;
+	a = self.sym.values;
+	a[i] = value;
+	self.sym.size = i + 1;
+)
+

@@ -29,23 +29,32 @@
 //
 
 include "std.ri";
+include "sym.ri";
 
 struct as (
 	in,
 	insize,
 	inpos,
-	line
+	line,
+	tmp,
+	syms
 );
 
+as__init(self, a);
 as__new()
 (
-	%self;
+	%self,a;
 	self = struct(as);
+	a = struct(sym);
+	self.as.syms = a;
+	self.as.tmp = bytes(2);
+	as__init(self, a);
 	return self;
 )
 
 as__dispose(self)
 (
+	free(self.as.tmp);
 	free(self);
 )
 
@@ -63,22 +72,126 @@ as__load(self, src)
 	return 0;
 )
 
+as__print(self, name, len)
+(
+	%i,tmp;
+	i = 0;
+	tmp = self.as.tmp;
+	while (i < len) (
+		poke(tmp,0,peek(name, i));
+		print(tmp);
+		i = i + 1;
+	);
+	
+)
+
+as__whitespaces(self)
+(
+	%s,b,c, done;
+	s = self.as.inpos - 1;
+	b = self.as.in;
+	done = 0;
+	while (!done) (
+		s = s + 1;
+		c = peek(b,s);
+		done = 1;
+		switch(c) (
+		' ':'\t':'\r': (done = 0;),
+		';': (
+			while (c != '\n' && c != '\0') (
+				s = s + 1;
+				c = peek(b,s);
+			);
+		)
+		);
+	);
+	self.as.inpos = s;
+	return c;
+)
+
+
+as__code32(self)
+(
+	print("CODE32\n");
+)
+
+
+as__identifier(self, name, len)
+(
+	%i,s,t,v;
+	as__print(self, name, len);
+	switch (len < 1) (
+	1: (return -1;)
+	);
+	s = self.as.syms;
+	i = sym__get_index(s, name, len);
+	print2(i);
+	print("\n");
+	switch(i >= 0) (
+	1: (
+		t = sym__get_type(s, i);
+		v = sym__get_value(s, i);
+		switch(t) (
+		0:(),
+		1:( return v.(self);)
+		);
+	),
+	0:-1:()
+	);
+	print("#error at line ");
+	print2(self.as.line);
+	print(" '");
+	as__print(self, name, len);
+	print("' unknown!\n");
+	self.as.inpos = self.as.inpos + len;
+	return -1;
+)
+
+as__token(self)
+(
+	%s,so,l,b,c, done;
+	so = self.as.inpos;
+	s = so - 1;
+	b = self.as.in;
+	done = 0;
+	while (!done) (
+		s = s + 1;
+		c = peek(b,s);
+		switch(c) (
+		' ':'\t':'\r':'\n': (done = 1;),
+		';': ( done = 1;),
+		',': ( done = 1;)
+		);
+	);
+	self.as.inpos = s;
+	l = s - so;
+	as__identifier(self, self.as.in + so, l);	
+	return 0;
+)
+
+
 as__line(self)
 (
-	%s,e,b,c;
+	%done;
 	self.as.line = self.as.line + 1;
-	s = self.as.inpos;
-	e = s;
-	b = self.as.in;
-	c = peek(b,e);
-	while (c != '\n' && c != 0) (
-		e = e + 1;
-		c = peek(b,e);
-	);
-	switch (c != 0) (
-	1: (self.as.inpos = e + 1;),
-	0:-1:(self.as.inpos = self.as.insize;)
-	);
+	done = 0;
+	as__whitespaces(self);
+	c = as__token(self);
+	switch (peek(self.as.in, self.as.inpos)) (
+	'\n': (
+		self.as.inpos = self.as.inpos + 1;
+		done = 1;
+	),
+	'\0': (
+		done = 1;
+	));
+	switch (!done) (
+	1:(
+		print("#error at line ");
+		print2(self.as.line);
+		print("!\n");
+		exit(-1);
+	));
 	print2(self.as.line);
 	print(":\n");
 )
@@ -92,6 +205,12 @@ as__assemble(self, dst)
 	);
 	return 0;
 )
+as__init(self, a)
+(
+	%f,n;
+	n = ".code32"; f = as__code32; sym__add(a, n, 1, f);
+)
+
 
 startup(argc, argv) 
 (
